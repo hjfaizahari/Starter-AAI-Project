@@ -1,6 +1,6 @@
 // Prisma schema for the Budiman HRMS starter app.
-// Only the User table exists so far. You add the leave request table in
-// Session 2, from the data design you write in docs/specs/.
+// Two tables: User (who can log in) and LeaveRequest (the Session 2 module),
+// as specified in docs/specs/02-design.md Part A.
 // Roles are stored as a String because the SQLite connector does not support
 // Prisma `enum`. The valid values are in src/lib/constants.ts.
 
@@ -23,4 +23,31 @@ model User {
   designation      String
   division         String
   createdAt        DateTime @default(now())
+
+  // Navigation only — the foreign keys live on LeaveRequest, so the User
+  // table itself keeps exactly the fields from design Part A §1.
+  leaveRequestsAsEmployee   LeaveRequest[] @relation("LeaveEmployee")
+  leaveRequestsAsSupervisor LeaveRequest[] @relation("LeaveSupervisor")
+  hrDecisions               LeaveRequest[] @relation("LeaveHrDecision")
+}
+
+// One row per leave request. Created only by the employee's Submit action;
+// never edited afterwards, never deleted (design Part A, rule 13).
+model LeaveRequest {
+  id               Int      @id @default(autoincrement())
+  employeeId       Int
+  employee         User     @relation("LeaveEmployee", fields: [employeeId], references: [id])
+  supervisorId     Int
+  supervisor       User     @relation("LeaveSupervisor", fields: [supervisorId], references: [id])
+  type             String // ANNUAL | SICK — valid values in src/lib/constants.ts (rule 6)
+  startDate        DateTime // whole calendar day
+  endDate          DateTime // never before startDate (rule 7)
+  workingDays      Int // Mon–Fri count, computed by the server on submit (rule 8)
+  reason           String   @default("") // optional; empty string when not given
+  status           String   @default("WAITING_SUPERVISOR") // WAITING_SUPERVISOR | SIGNED | WAITING_HR | APPROVED | REJECTED (rule 10)
+  supervisorRemark String   @default("") // required on rejection only (rule 11)
+  hrRemark         String   @default("") // required on rejection only (rule 11)
+  decidedByHrId    Int?
+  decidedByHr      User?    @relation("LeaveHrDecision", fields: [decidedByHrId], references: [id]) // set when HR decides (rule 12)
+  createdAt        DateTime @default(now()) // shown as "Submitted on"
 }
