@@ -124,8 +124,9 @@ has to work before anything else.
   rules.
 - **Files:** `src/lib/leave.ts`.
 - **Check:** `npm run lint` passes; `npx tsx` prints `2` for a Friday→Monday
-  span and `1` for Monday→Tuesday using the day-count helper, and the
-  transition helper refuses Signed → Approved.
+  span (weekend skipped), `2` for Monday→Tuesday (both days count — the same
+  span as AC-10) and `1` for a single-day span, using the day-count helper;
+  and the transition helper refuses Signed → Approved.
 
 ## Task 9 – Sample requests in the seed *(Core)*
 
